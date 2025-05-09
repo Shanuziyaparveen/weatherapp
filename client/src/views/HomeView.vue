@@ -111,7 +111,33 @@ import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Cloudy, CloudDrizzle,
 
 const locations = ['Delhi', 'Moscow', 'Paris', 'New York', 'Sydney', 'Riyadh'];
 const selectedLocation = ref(locations[0]);
-const weatherData = ref(null);
+interface WeatherData {
+  location: string;
+  country: string;
+  current: {
+    temp: number;
+    feels_like: number;
+    humidity: number;
+    pressure: number;
+    wind_speed: number;
+    uvi: number;
+    sunset: number;
+    weather: {
+      icon: string;
+      description: string;
+    }[];
+  };
+  hourly: {
+    dt: number;
+    temp: number;
+    weather: {
+      icon: string;
+      description: string;
+    }[];
+  }[];
+}
+
+const weatherData = ref<WeatherData | null>(null);
 const loading = ref(false);
 const error = ref('');
 
@@ -158,9 +184,8 @@ const { mutate: saveWeather } = useMutation(SAVE_WEATHER);
 const formattedDate = computed(() => {
   return format(new Date(), 'd MMM yyyy');
 });
-
-function getWeatherIcon(iconCode) {
-  const icons = {
+function getWeatherIcon(iconCode: string | number) {
+  const icons: Record<string, any> = {
     '01d': Sun,
     '01n': Sun,
     '02d': Cloudy,
@@ -178,19 +203,19 @@ function getWeatherIcon(iconCode) {
     '13d': CloudSnow,
     '13n': CloudSnow,
     '50d': Cloud,
-    '50n': Cloud
+    '50n': Cloud,
   };
-  
-  return icons[iconCode] || Cloud;
-}
 
-function formatTime(timestamp) {
+  return icons[String(iconCode)] || Cloud;
+}
+function formatTime(timestamp: number): string {
   return format(fromUnixTime(timestamp), 'HH:mm');
 }
 
-function formatHour(timestamp) {
+function formatHour(timestamp: number): string {
   return format(fromUnixTime(timestamp), 'h a');
 }
+
 
 async function fetchWeather() {
   if (!selectedLocation.value) return;
@@ -198,14 +223,44 @@ async function fetchWeather() {
   loading.value = true;
   error.value = '';
   
-  try {
+  try {const RAW_GET_WEATHER_QUERY = `
+  query GetWeather($location: String!) {
+    getWeather(location: $location) {
+      location
+      country
+      current {
+        temp
+        feels_like
+        humidity
+        pressure
+        wind_speed
+        uvi
+        sunset
+        weather {
+          icon
+          description
+        }
+      }
+      hourly {
+        dt
+        temp
+        weather {
+          icon
+          description
+        }
+      }
+    }
+  }
+`;
+
     const response = await fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: GET_WEATHER.loc.source.body,
-        variables: { location: selectedLocation.value }
-      })
+     body: JSON.stringify({
+  query: RAW_GET_WEATHER_QUERY,
+  variables: { location: selectedLocation.value }
+})
+
     });
     
     const result = await response.json();

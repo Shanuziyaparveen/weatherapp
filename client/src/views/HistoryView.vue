@@ -122,7 +122,19 @@ import gql from 'graphql-tag';
 import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Cloudy, CloudDrizzle, RefreshCw, Search } from 'lucide-vue-next';
 
 const locations = ['Delhi', 'Moscow', 'Paris', 'New York', 'Sydney', 'Riyadh'];
-const historyData = ref([]);
+
+interface WeatherRecord {
+  id: string;
+  location: string;
+  date: string;
+  temperature: number;
+  weatherDescription: string;
+  weatherIcon: keyof typeof iconTypes;
+  humidity: number;
+  windSpeed: number;
+}
+
+const historyData = ref<WeatherRecord[]>([]);
 const loading = ref(false);
 const error = ref('');
 const dateRangeError = ref('');
@@ -165,33 +177,33 @@ watch([() => filters.value.fromDate, () => filters.value.toDate], ([newFromDate,
   }
 });
 
-function formatDate(dateString) {
+function formatDate(dateString: string): string {
   return format(new Date(dateString), 'MMM d, yyyy');
 }
 
-function getWeatherIcon(iconCode) {
-  const icons = {
-    '01d': Sun,
-    '01n': Sun,
-    '02d': Cloudy,
-    '02n': Cloudy,
-    '03d': Cloud,
-    '03n': Cloud,
-    '04d': Cloud,
-    '04n': Cloud,
-    '09d': CloudDrizzle,
-    '09n': CloudDrizzle,
-    '10d': CloudRain,
-    '10n': CloudRain,
-    '11d': CloudLightning,
-    '11n': CloudLightning,
-    '13d': CloudSnow,
-    '13n': CloudSnow,
-    '50d': Cloud,
-    '50n': Cloud
-  };
-  
-  return icons[iconCode] || Cloud;
+const iconTypes = {
+  '01d': Sun,
+  '01n': Sun,
+  '02d': Cloudy,
+  '02n': Cloudy,
+  '03d': Cloud,
+  '03n': Cloud,
+  '04d': Cloud,
+  '04n': Cloud,
+  '09d': CloudDrizzle,
+  '09n': CloudDrizzle,
+  '10d': CloudRain,
+  '10n': CloudRain,
+  '11d': CloudLightning,
+  '11n': CloudLightning,
+  '13d': CloudSnow,
+  '13n': CloudSnow,
+  '50d': Cloud,
+  '50n': Cloud
+};
+
+function getWeatherIcon(iconCode: keyof typeof iconTypes) {
+  return iconTypes[iconCode] || Cloud;
 }
 
 async function fetchHistory() {
